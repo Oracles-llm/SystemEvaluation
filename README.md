@@ -1,3 +1,6 @@
+# SystemEvaluation
+
+```
 system_evaluation/
 ├── .env                  # API keys (Create this yourself)
 ├── dataset_downloader.py # Your script to get data
@@ -16,3 +19,4 @@ system_evaluation/
         ├── layer2_instruction.py
         ├── layer3_rag.py
         └── layer4_efficiency.py
+```
