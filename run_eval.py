@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 # Import System & Layers
-from src.my_system import MyEdgeSystem
+from MainProject.src.my_system import MyEdgeSystem
 from evaluation.layers import (
     evaluate_accuracy, 
     evaluate_efficiency,
