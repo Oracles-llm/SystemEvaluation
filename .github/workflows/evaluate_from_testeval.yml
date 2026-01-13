@@ -1,0 +1,77 @@
+name: Evaluate TestEval2LLM Responses
+
+on:
+  repository_dispatch:
+    types: [teval_complete]
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        description: "Source repo in owner/name form"
+        required: true
+      run_id:
+        description: "TestEval2LLM workflow run ID"
+        required: true
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SystemEvaluation
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download TestEval2LLM responses artifact
+        env:
+          SYSTEMEVAL_TOKEN: ${{ secrets.SYSTEMEVAL_TOKEN }}
+          SOURCE_REPO: ${{ github.event.client_payload.source_repo || github.event.inputs.source_repo }}
+          RUN_ID: ${{ github.event.client_payload.run_id || github.event.inputs.run_id }}
+        run: |
+          if [ -z "$SOURCE_REPO" ] || [ -z "$RUN_ID" ]; then
+            echo "SOURCE_REPO and RUN_ID are required."
+            exit 1
+          fi
+          if [ -z "$SYSTEMEVAL_TOKEN" ]; then
+            echo "SYSTEMEVAL_TOKEN secret is required."
+            exit 1
+          fi
+
+          api="https://api.github.com/repos/${SOURCE_REPO}/actions/runs/${RUN_ID}/artifacts"
+          artifact_id=$(curl -s -H "Authorization: Bearer $SYSTEMEVAL_TOKEN" \
+            -H "Accept: application/vnd.github+json" "$api" | \
+            jq -r '.artifacts[] | select(.name=="model-responses") | .id' | head -n 1)
+
+          if [ -z "$artifact_id" ] || [ "$artifact_id" = "null" ]; then
+            echo "model-responses artifact not found."
+            exit 1
+          fi
+
+          curl -L -H "Authorization: Bearer $SYSTEMEVAL_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${SOURCE_REPO}/actions/artifacts/${artifact_id}/zip" \
+            -o artifact.zip
+
+          unzip -o artifact.zip -d artifacts
+
+      - name: Run evaluation
+        run: |
+          responses_path=$(find artifacts -name responses.jsonl -print -quit)
+          if [ -z "$responses_path" ]; then
+            echo "responses.jsonl not found in artifacts."
+            exit 1
+          fi
+          RESPONSES_FILE="$responses_path" python run_eval_responses.py
+
+      - name: Upload evaluation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-report
+          path: results/*.json
