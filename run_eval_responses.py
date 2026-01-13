@@ -47,17 +47,21 @@ def main() -> None:
     for i, record in enumerate(records):
         query = record.get("prompt", "")
         answer = record.get("response", "")
+        ground_truth = record.get("ground_truth", "")
+        dataset_id = record.get("dataset_id", "unknown")
         if not query:
             continue
 
         print(f"\nTest Case {i + 1}: {query[:50]}...")
-        l1 = evaluate_accuracy(query, answer, "")
+        l1 = evaluate_accuracy(query, answer, ground_truth)
 
         results.append(
             {
                 "id": i,
+                "dataset_id": dataset_id,
                 "query": query,
                 "system_answer": answer,
+                "ground_truth": ground_truth,
                 "scores": {"accuracy": l1.score},
                 "reasoning": {"accuracy": l1.reasoning},
                 "metadata": {"source": "TestEval2LLM"},
