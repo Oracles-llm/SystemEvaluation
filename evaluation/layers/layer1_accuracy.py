@@ -7,11 +7,11 @@ from evaluation.utils import EvalResult
 def parse_score(text: str) -> float | None:
     if not text:
         return None
-    match = re.search(r"(-?\d+(?:\.\d+)?)", text)
-    if not match:
+    matches = re.findall(r"-?\d+(?:\.\d+)?", text)
+    if not matches:
         return None
     try:
-        return float(match.group(1))
+        return float(matches[-1])
     except ValueError:
         return None
 
@@ -40,5 +40,6 @@ def evaluate_accuracy(query, actual_answer, ground_truth):
     score = parse_score(response_text)
     if score is None:
         score = 0.0
+    score = max(0.0, min(score, 1.0))
         
     return EvalResult(score=score, reasoning="LLM Judge Evaluated", metadata={})
