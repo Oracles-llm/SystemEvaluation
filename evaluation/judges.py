@@ -13,7 +13,7 @@ class LLMJudge:
         # self.model_name = os.getenv("JUDGE_MODEL_NAME", "gpt-4o")
 
         self.api_key = "AIzaSyDzjzvQy8WVcMu2_Etu3h0QtZFY4alaN28"
-        self.model_name = os.getenv("JUDGE_MODEL_NAME", "gemini-1.5-flash")
+        self.model_name = os.getenv("JUDGE_MODEL_NAME", "gemini-1.5-pro")
 
         if not self.api_key or self.api_key == "AIzaSyDzjzvQy8WVcMu2_Etu3h0QtZFY4alaN28":
             print("WARNING: GEMINI API key not set in judges.py. Judge will fail.")

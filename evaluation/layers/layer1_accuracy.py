@@ -1,5 +1,19 @@
+import re
+
 from evaluation.judges import judge_client
 from evaluation.utils import EvalResult
+
+
+def parse_score(text: str) -> float | None:
+    if not text:
+        return None
+    match = re.search(r"(-?\d+(?:\.\d+)?)", text)
+    if not match:
+        return None
+    try:
+        return float(match.group(1))
+    except ValueError:
+        return None
 
 def evaluate_accuracy(query, actual_answer, ground_truth):
     if ground_truth:
@@ -23,10 +37,8 @@ def evaluate_accuracy(query, actual_answer, ground_truth):
         """
     
     response_text = judge_client.evaluate(prompt)
-    
-    try:
-        score = float(response_text.strip())
-    except:
+    score = parse_score(response_text)
+    if score is None:
         score = 0.0
         
     return EvalResult(score=score, reasoning="LLM Judge Evaluated", metadata={})
