@@ -44,6 +44,7 @@ def main() -> None:
         return
 
     results = []
+    judge_error_count = 0
     for i, record in enumerate(records):
         query = record.get("prompt", "")
         answer = record.get("response", "")
@@ -55,6 +56,12 @@ def main() -> None:
         print(f"\nTest Case {i + 1}: {query[:50]}...")
         l1 = evaluate_accuracy(query, answer, ground_truth)
 
+        metadata = {"source": "TestEval2LLM"}
+        if l1.metadata:
+            metadata.update(l1.metadata)
+            if l1.metadata.get("judge_error"):
+                judge_error_count += 1
+
         results.append(
             {
                 "id": i,
@@ -64,7 +71,7 @@ def main() -> None:
                 "ground_truth": ground_truth,
                 "scores": {"accuracy": l1.score},
                 "reasoning": {"accuracy": l1.reasoning},
-                "metadata": {"source": "TestEval2LLM"},
+                "metadata": metadata,
             }
         )
 
@@ -73,6 +80,7 @@ def main() -> None:
         "timestamp": str(datetime.now()),
         "total_cases": len(results),
         "average_accuracy": avg_acc,
+        "error_counts": {"judge_accuracy": judge_error_count},
         "details": results,
     }
 

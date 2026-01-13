@@ -10,10 +10,14 @@ def parse_score(text: str) -> float | None:
     matches = re.findall(r"-?\d+(?:\.\d+)?", text)
     if not matches:
         return None
-    try:
-        return float(matches[-1])
-    except ValueError:
-        return None
+    for token in reversed(matches):
+        try:
+            value = float(token)
+        except ValueError:
+            continue
+        if 0.0 <= value <= 1.0:
+            return value
+    return None
 
 def evaluate_accuracy(query, actual_answer, ground_truth):
     if ground_truth:
@@ -37,6 +41,19 @@ def evaluate_accuracy(query, actual_answer, ground_truth):
         """
     
     response_text = judge_client.evaluate(prompt)
+    if judge_client.last_error:
+        metadata = {"judge_error": judge_client.last_error}
+        if judge_client.last_error_code is not None:
+            metadata["judge_error_code"] = judge_client.last_error_code
+        if judge_client.last_model_used:
+            metadata["judge_model"] = judge_client.last_model_used
+        if judge_client.last_model_fallback:
+            metadata["judge_model_fallback"] = True
+        return EvalResult(
+            score=0.0,
+            reasoning=f"Judge Error: {judge_client.last_error}",
+            metadata=metadata,
+        )
     score = parse_score(response_text)
     if score is None:
         score = 0.0
